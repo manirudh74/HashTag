@@ -37,7 +37,7 @@ public class MainActivity extends ActionBarActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     // Movies json url
-    private static final String twitterURL = "https://api.twitter.com/1.1/trends/place.json?id=1";
+    private static final String twitterURL = "https://api.twitter.com/oauth/request_token";
     private ProgressDialog pDialog;
     private List<Movie> movieList = new ArrayList<Movie>();
     private ListView listView;

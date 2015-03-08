@@ -1,5 +1,7 @@
 package com.social.hashtag.util;
 
+import android.util.Log;
+
 import com.android.volley.Response;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.social.hashtag.MainActivity;
@@ -8,6 +10,7 @@ import org.json.JSONArray;
 import org.scribe.model.OAuthRequest;
 import org.scribe.model.Verb;
 import org.scribe.model.Token;
+import org.scribe.oauth.OAuthService;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -45,16 +48,38 @@ public class OAuthJSONArrayRequest<T> extends JsonArrayRequest{
                 addParameter(entry.getKey(), entry.getValue());
             }
         }
-        return super.getUrl() + getParameterString();
+        String url = super.getUrl() + getParameterString();
+        Log.i("", "$$$$");
+        Log.i("", url);
+        Log.i("", "$$$$");
+        return url;
     }
 
-    private void buildOAuthRequest() {
+    private void buildOAuthRequest()  {
         oAuthRequest = new OAuthRequest(getVerb(), super.getUrl());
         for(Map.Entry<String, String> entry : getParams().entrySet()) {
             oAuthRequest.addQuerystringParameter(entry.getKey(), entry.getValue());
         }
-        Token token = MainActivity.getOauthService().getRequestToken();
-        MainActivity.getOauthService().signRequest(token, oAuthRequest);
+
+        Thread thread = new Thread(new Runnable(){
+            @Override
+            public void run() {
+                try {
+                    OAuthService service = MainActivity.getOauthService();
+                    Token token = service.getRequestToken();
+                    service.signRequest(token, oAuthRequest);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        thread.start();
+        try{
+            thread.wait();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private Verb getVerb() {
