@@ -7,6 +7,8 @@ import com.android.volley.toolbox.JsonArrayRequest;
 import com.social.hashtag.MainActivity;
 
 import org.json.JSONArray;
+import org.scribe.builder.ServiceBuilder;
+import org.scribe.builder.api.TwitterApi;
 import org.scribe.model.OAuthRequest;
 import org.scribe.model.Verb;
 import org.scribe.model.Token;
@@ -23,20 +25,16 @@ public class OAuthJSONArrayRequest<T> extends JsonArrayRequest{
 
     private HashMap<String, String> params;
     private OAuthRequest oAuthRequest;
+    private String url;
+    public static String twitterCustomerKey = "OKeponOljpT5Ap6l1vfkjlMjb";
+    public static String twitterCustomerSecret = "lmWlIxwNL4y8eM8STuseWx1zt8QfcA0rVAqu4npB6xLGs630O8";
+    //public static String twitterAccessToken = "50584263-hn3k4oIeLUy0G36loEZQP4VwvQfKuZiLZnN3XJUYV";
+    //public static String twitterAccessTokenSecret = "1l3urChgsmzAXCUEiji3ZAvnpWCcmq5jL5N8s8Z1AbOvW";
 
     public OAuthJSONArrayRequest(String url, Response.Listener<JSONArray> listener, Response.ErrorListener errorListener) {
         super(url, listener, errorListener);
+        this.url=url;
         params = new HashMap<String, String>();
-    }
-
-
-    public void addParameter(String key, String value) {
-        params.put(key, value);
-    }
-
-    @Override
-    protected Map<String, String> getParams() {
-        return params;
     }
 
     @Override
@@ -45,19 +43,19 @@ public class OAuthJSONArrayRequest<T> extends JsonArrayRequest{
             buildOAuthRequest();
 
             for(Map.Entry<String, String> entry : oAuthRequest.getOauthParameters().entrySet()) {
-                addParameter(entry.getKey(), entry.getValue());
+                params.put(entry.getKey(), entry.getValue());
             }
         }
-        String url = super.getUrl() + getParameterString();
+        /*String url = super.getUrl() + getParameterString();
         Log.i("", "$$$$");
         Log.i("", url);
-        Log.i("", "$$$$");
-        return url;
+        Log.i("", "$$$$");*/
+        return this.url;
     }
 
     private void buildOAuthRequest()  {
         oAuthRequest = new OAuthRequest(getVerb(), super.getUrl());
-        for(Map.Entry<String, String> entry : getParams().entrySet()) {
+        for(Map.Entry<String, String> entry : params.entrySet()) {
             oAuthRequest.addQuerystringParameter(entry.getKey(), entry.getValue());
         }
 
@@ -65,7 +63,7 @@ public class OAuthJSONArrayRequest<T> extends JsonArrayRequest{
             @Override
             public void run() {
                 try {
-                    OAuthService service = MainActivity.getOauthService();
+                    OAuthService service = getOauthService();
                     Token token = service.getRequestToken();
                     service.signRequest(token, oAuthRequest);
                 } catch (Exception e) {
@@ -76,10 +74,19 @@ public class OAuthJSONArrayRequest<T> extends JsonArrayRequest{
 
         thread.start();
         try{
-            thread.wait();
+            thread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    private OAuthService getOauthService(){
+        OAuthService service = new ServiceBuilder()
+                .provider(TwitterApi.class)
+                .apiKey(twitterCustomerKey)
+                .apiSecret(twitterCustomerSecret)
+                .build();
+        return service;
     }
 
     private Verb getVerb() {

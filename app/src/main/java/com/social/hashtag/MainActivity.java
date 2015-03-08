@@ -37,25 +37,11 @@ public class MainActivity extends ActionBarActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     // Movies json url
-    private static final String twitterURL = "https://api.twitter.com/oauth/request_token";
+    private static final String twitterURL = "https://api.twitter.com/1.1/trends/place.json?id=1";
     private ProgressDialog pDialog;
     private List<Movie> movieList = new ArrayList<Movie>();
     private ListView listView;
     private CustomListAdapter adapter;
-
-    public static String twitterCustomerKey = "OKeponOljpT5Ap6l1vfkjlMjb";
-    public static String twitterCustomerSecret = "lmWlIxwNL4y8eM8STuseWx1zt8QfcA0rVAqu4npB6xLGs630O8";
-    public static String twitterAccessToken = "50584263-hn3k4oIeLUy0G36loEZQP4VwvQfKuZiLZnN3XJUYV";
-    public static String twitterAccessTokenSecret = "1l3urChgsmzAXCUEiji3ZAvnpWCcmq5jL5N8s8Z1AbOvW";
-
-    public static OAuthService getOauthService(){
-        OAuthService service = new ServiceBuilder()
-                .provider(TwitterApi.class)
-                .apiKey(twitterCustomerKey)
-                .apiSecret(twitterCustomerSecret)
-                .build();
-        return service;
-    }
 
 
     @Override
@@ -79,7 +65,10 @@ public class MainActivity extends ActionBarActivity {
                 new Response.Listener<JSONArray>() {
                     @Override
                     public void onResponse(JSONArray response) {
-                        Log.d(TAG, response.toString());
+                        Log.d("", "@@@@@@@@@@@@@@@@22");
+                        Log.d("", response.toString());
+                        Log.d("", "@@@@@@@@@@@@@@@@22");
+
                         hidePDialog();
 
                         // Parsing json
@@ -119,7 +108,9 @@ public class MainActivity extends ActionBarActivity {
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
+                VolleyLog.d(TAG, "##################");
                 VolleyLog.d(TAG, "Error: " + error.getMessage());
+                VolleyLog.d(TAG, "##################");
                 hidePDialog();
 
             }
