@@ -33,6 +33,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.social.hashtag.adapter.CustomListAdapter;
 import com.social.hashtag.app.AppController;
+import com.social.hashtag.authentication.TwitterOAuthHandler;
 import com.social.hashtag.model.Movie;
 import com.social.hashtag.network.GsonRequest;
 import com.social.hashtag.network.RequestQueueSingleton;
@@ -62,26 +63,6 @@ public class MainActivity extends ActionBarActivity {
     private List<Movie> movieList = new ArrayList<Movie>();
     private ListView listView;
     private CustomListAdapter adapter;
-
-
-    // Preference Constants
-    static String PREFERENCE_NAME = "twitter_oauth";
-    static final String PREF_KEY_OAUTH_REQUEST_TOKEN = "oauth_request_token";
-    static final String PREF_KEY_OAUTH_TOKEN = "oauth_token";
-    static final String PREF_KEY_OAUTH_SECRET = "oauth_token_secret";
-    static final String PREF_KEY_TWITTER_LOGIN = "isTwitterLogedIn";
-
-    static final String TWITTER_CALLBACK_URL = "payojoauth://someurl";
-
-    // Twitter
-
-    static String TWITTER_CONSUMER_KEY = "NNtogSAkXzWLPp9DgtnX7utpm";
-    static String TWITTER_CONSUMER_SECRET = "bO7UW3HIEGtHyz5aEFNe7gEjn3ZPbmvf4EzTqvBMwGs4vJwf9B";
-    static final String URL_TWITTER_AUTH = "auth_url";
-    static final String URL_TWITTER_OAUTH_VERIFIER = "oauth_verifier";
-    static final String URL_TWITTER_OAUTH_TOKEN = "oauth_token";
-    private static Twitter twitter = getTwitterInstance();
-    private RequestToken requestToken;
 
     private static AlertDialogManager alert = new AlertDialogManager();
     private Context context;
@@ -119,8 +100,6 @@ public class MainActivity extends ActionBarActivity {
         showProgressDialog("Loading...");
         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#1b1b1b")));
 
-        twitter = getTwitterInstance();
-
         loginButton = (Button) findViewById(R.id.btnLoginTwitter);
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -135,12 +114,9 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        //OAuth access token flow
-        if (!isTwitterLoggedInAlready()) {
-            Uri redirectUri = intent.getData();
-            if (redirectUri != null && redirectUri.toString().startsWith(TWITTER_CALLBACK_URL)) {
-                handleOAuthRedirectForAccessToken(redirectUri);
-            }
+        Uri redirectUri = intent.getData();
+        if (redirectUri != null) {
+            handleOAuthRedirectForAccessToken(redirectUri);
         }
     }
 
@@ -167,197 +143,26 @@ public class MainActivity extends ActionBarActivity {
     //TWITTER FUNCTIONS
 
     public void loginToTwitter(){
-        RequestQueueSingleton requestQueueSingleton = RequestQueueSingleton.getInstance(getApplicationContext());
-        //requestQueueSingleton.addToRequestQueue(new GsonRequest<Object>());
-        requestQueueSingleton.addToRequestQueue(new OAuthJSONArrayRequest("https://api.twitter.com/oauth/request_token",
-                        new OAuthUIRedirectHandler() {
-                            @Override
-                            public void RedirectToAuthorizationUrl(String authorizationUrl) {
-                                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(authorizationUrl)));
-                            }
-                        },
-                        new Response.Listener<JSONArray>() {
-                            @Override
-                            public void onResponse(JSONArray response) {
-                                Log.d("", "@@@@@@@@@@@@@@@@22");
-                                Log.d("", response.toString());
-                                Log.d("", "@@@@@@@@@@@@@@@@22");
-
-                                // Parsing json
-                                for (int i = 0; i < response.length(); i++) {
-                                    try {
-
-                                        JSONObject obj = response.getJSONObject(i);
-                                        Log.i("Json Response", obj.toString());
-                                        Movie movie = new Movie();
-                                        movie.setTitle(obj.getString("title"));
-                                        movie.setThumbnailUrl(obj.getString("image"));
-                                        movie.setRating(((Number) obj.get("rating"))
-                                                .doubleValue());
-                                        movie.setYear(obj.getInt("releaseYear"));
-
-                                        // Genre is json array
-                                        JSONArray genreArry = obj.getJSONArray("genre");
-                                        ArrayList<String> genre = new ArrayList<String>();
-                                        for (int j = 0; j < genreArry.length(); j++) {
-                                            genre.add((String) genreArry.get(j));
-                                        }
-                                        movie.setGenre(genre);
-
-                                        // adding movie to movies array
-                                        movieList.add(movie);
-
-                                    } catch (JSONException e) {
-                                        e.printStackTrace();
-                                    }
-
-                                }
-
-                                // notifying list adapter about data changes
-                                // so that it renders the list view with updated data
-                                adapter.notifyDataSetChanged();
-                            }
-                        },
-                        new Response.ErrorListener() {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
-                            }
-                        })
-                        .setRetryPolicy(new DefaultRetryPolicy(0, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
-                        )
-        );
-    }
-
-    public void loginToTwitter_twitter4j() {
-        if (isTwitterLoggedInAlready()) {
-            String token = sharedPreferences.getString(PREF_KEY_OAUTH_TOKEN, null);
-            String secret = sharedPreferences.getString(PREF_KEY_OAUTH_SECRET, null);
-            // Create the twitter access token from the credentials we got previously
-            AccessToken at = new AccessToken(token, secret);
-            twitter.setOAuthAccessToken(at);
-            makeApiCall();
-            return;
-            //Toast.makeText(context, "Already Logged into twitter", Toast.LENGTH_LONG).show();
-        }
-
-        Future future = networkAccessThreadPool.submit(new Callable<RequestToken>() {
-            @Override
-            public RequestToken call() throws Exception {
-                RequestToken requestToken = twitter.getOAuthRequestToken(TWITTER_CALLBACK_URL);
-                return requestToken;
-            }
-        });
+        TwitterOAuthHandler handler = new TwitterOAuthHandler(
+            new OAuthUIRedirectHandler(){
+                @Override
+                public void RedirectToAuthorizationUrl(String authorizationUrl){
+                     startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(authorizationUrl)));
+                }
+            },
+            getApplicationContext());
         try {
-            requestToken = (RequestToken) future.get();
-        } catch (Exception e) {
-            alert.showAlertDialog(getApplicationContext(), "Twitter OAuth Request Token Request Failed", e.getMessage(), false);
+            handler.initiateTokenFlow();
+        }catch (Exception e){
+            alert.showAlertDialog(this, "Login Failed", "Login to Twitter Failed", false);
         }
-        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(requestToken.getAuthenticationURL())));
     }
 
     public void handleOAuthRedirectForAccessToken(Uri redirectUri) {
-
-        final String verifier = redirectUri.getQueryParameter(URL_TWITTER_OAUTH_VERIFIER);
-
-        try {
-            Future future = networkAccessThreadPool.submit(new Callable<AccessToken>() {
-                @Override
-                public AccessToken call() throws Exception {
-                    AccessToken accessToken = twitter.getOAuthAccessToken(requestToken, verifier);
-                    return accessToken;
-                }
-            });
-            AccessToken accessToken = (AccessToken) future.get();
-
-            SharedPreferences.Editor e = sharedPreferences.edit();
-            e.putString(PREF_KEY_OAUTH_TOKEN, accessToken.getToken());
-            e.putString(PREF_KEY_OAUTH_SECRET, accessToken.getTokenSecret());
-            e.putBoolean(PREF_KEY_TWITTER_LOGIN, true);
-            e.commit();
-            ConfigurationBuilder builder = new ConfigurationBuilder();
-            builder.setOAuthConsumerKey(TWITTER_CONSUMER_KEY);
-            builder.setOAuthConsumerSecret(TWITTER_CONSUMER_SECRET);
-            twitter = new TwitterFactory(builder.build()).getInstance(accessToken);
-
-            loginButton.setVisibility(View.GONE);
-
-            long userID = accessToken.getUserId();
-            User user = twitter.showUser(userID);
-            future = networkAccessThreadPool.submit(new Callable<String>() {
-                @Override
-                public String call() throws Exception {
-                    return twitter.getScreenName();
-                }
-            });
-            String username = (String) future.get();
-            lblUserName.setText(Html.fromHtml("<b>Welcome " + username + "</b>"));
-            lblUserName.setVisibility(View.VISIBLE);
-
-            makeApiCall();
-        } catch (Exception e) {
-            alert.showAlertDialog(getApplicationContext(), "Twitter OAuth Access Token Request Failed", e.getMessage(), false);
-        }
+        //TODO: identify which service(Twitter, fb, etc) the redirect is for and dispatch to appropriate handler
     }
 
     private void makeApiCall() {
 
-        //TEST - DELETE
-        showProgressDialog("Getting places from Twitter");
-        Future future = networkAccessThreadPool.submit(new Callable<TimelinesResources>() {
-            @Override
-            public TimelinesResources call() throws Exception {
-                return twitter.timelines();
-                //return twitter.getPlaceTrends(12590014).getTrends();
-            }
-        });
-
-        try {
-            final TimelinesResources trends = (TimelinesResources) future.get();
-
-            future = networkAccessThreadPool.submit(new Callable<ResponseList<Status>>() {
-                @Override
-                public ResponseList<Status> call() throws Exception {
-                    return trends.getRetweetsOfMe();
-                    //return twitter.getPlaceTrends(12590014).getTrends();
-                }
-            });
-
-            ResponseList<Status> r = (ResponseList<Status>)future.get();
-
-            for(Status s: r){
-                lblDebug.append(s.getText());
-            }
-
-            loginButton.setVisibility(View.GONE);
-
-//            for (int i = 0; i < trends.length; i++) {
-//                Trend t = trends[i];
-//                lblDebug.append("Name: " + t.getName());
-//                lblDebug.append("  Query: " + t.getQuery());
-//                lblDebug.append(" URL: " + t.getURL());
-//                lblDebug.append("\n");
-//        }
-        } catch (Exception e) {
-            alert.showAlertDialog(getApplicationContext(), "Twitter API Call Failed", e.getMessage(), false);
-        }
-
-        hideProgressDialog();
     }
-
-    private static Twitter getTwitterInstance() {
-
-        ConfigurationBuilder builder = new ConfigurationBuilder();
-        builder.setOAuthConsumerKey(TWITTER_CONSUMER_KEY);
-        builder.setOAuthConsumerSecret(TWITTER_CONSUMER_SECRET);
-        Configuration configuration = builder.build();
-
-        TwitterFactory factory = new TwitterFactory(configuration);
-        return factory.getInstance();
-    }
-
-    private boolean isTwitterLoggedInAlready() {
-        // return twitter login status from Shared Preferences
-        return sharedPreferences.getBoolean(PREF_KEY_TWITTER_LOGIN, false);
-    }
-
 }
