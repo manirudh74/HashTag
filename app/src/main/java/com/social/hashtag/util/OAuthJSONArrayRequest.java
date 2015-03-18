@@ -29,12 +29,12 @@ public class OAuthJSONArrayRequest<T> extends JsonArrayRequest{
     private HashMap<String, String> params;
     private OAuthRequest oAuthRequest;
     private String url;
-    private OAuthFlow oauthFlow;
+    private OAuthUIRedirectHandler oauthFlow;
     static final String twitterCustomerKey = "NNtogSAkXzWLPp9DgtnX7utpm";
     static final String twitterCustomerSecret = "bO7UW3HIEGtHyz5aEFNe7gEjn3ZPbmvf4EzTqvBMwGs4vJwf9B";
     static final String twitterCallbackUrl = "payojoauth://someurl";
 
-    public OAuthJSONArrayRequest(String url, OAuthFlow oaf, Response.Listener<JSONArray> listener, Response.ErrorListener errorListener) {
+    public OAuthJSONArrayRequest(String url, OAuthUIRedirectHandler oaf, Response.Listener<JSONArray> listener, Response.ErrorListener errorListener) {
         super(url, listener, errorListener);
         this.url=url;
         this.oauthFlow = oaf;

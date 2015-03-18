@@ -36,8 +36,8 @@ import com.social.hashtag.app.AppController;
 import com.social.hashtag.model.Movie;
 import com.social.hashtag.network.GsonRequest;
 import com.social.hashtag.network.RequestQueueSingleton;
-import com.social.hashtag.util.OAuthFlow;
 import com.social.hashtag.util.OAuthJSONArrayRequest;
+import com.social.hashtag.util.OAuthUIRedirectHandler;
 
 import twitter4j.ResponseList;
 import twitter4j.Status;
@@ -170,61 +170,61 @@ public class MainActivity extends ActionBarActivity {
         RequestQueueSingleton requestQueueSingleton = RequestQueueSingleton.getInstance(getApplicationContext());
         //requestQueueSingleton.addToRequestQueue(new GsonRequest<Object>());
         requestQueueSingleton.addToRequestQueue(new OAuthJSONArrayRequest("https://api.twitter.com/oauth/request_token",
-                    new OAuthFlow(){
-                        @Override
-                        public void RedirectToAuthorizationUrl(String authorizationUrl){
-                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(authorizationUrl)));
-                        }
-                    },
-                    new Response.Listener<JSONArray>() {
-                                @Override
-                                public void onResponse(JSONArray response) {
-                                        Log.d("", "@@@@@@@@@@@@@@@@22");
-                                        Log.d("", response.toString());
-                                        Log.d("", "@@@@@@@@@@@@@@@@22");
+                        new OAuthUIRedirectHandler() {
+                            @Override
+                            public void RedirectToAuthorizationUrl(String authorizationUrl) {
+                                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(authorizationUrl)));
+                            }
+                        },
+                        new Response.Listener<JSONArray>() {
+                            @Override
+                            public void onResponse(JSONArray response) {
+                                Log.d("", "@@@@@@@@@@@@@@@@22");
+                                Log.d("", response.toString());
+                                Log.d("", "@@@@@@@@@@@@@@@@22");
 
-                                                // Parsing json
-                                                        for (int i = 0; i < response.length(); i++) {
-                                                try {
+                                // Parsing json
+                                for (int i = 0; i < response.length(); i++) {
+                                    try {
 
-                                                                JSONObject obj = response.getJSONObject(i);
-                                                        Log.i("Json Response",obj.toString());
-                                                        Movie movie = new Movie();
-                                                        movie.setTitle(obj.getString("title"));
-                                                        movie.setThumbnailUrl(obj.getString("image"));
-                                                        movie.setRating(((Number) obj.get("rating"))
-                                                                .doubleValue());
-                                                        movie.setYear(obj.getInt("releaseYear"));
+                                        JSONObject obj = response.getJSONObject(i);
+                                        Log.i("Json Response", obj.toString());
+                                        Movie movie = new Movie();
+                                        movie.setTitle(obj.getString("title"));
+                                        movie.setThumbnailUrl(obj.getString("image"));
+                                        movie.setRating(((Number) obj.get("rating"))
+                                                .doubleValue());
+                                        movie.setYear(obj.getInt("releaseYear"));
 
-                                                                // Genre is json array
-                                                                        JSONArray genreArry = obj.getJSONArray("genre");
-                                                        ArrayList<String> genre = new ArrayList<String>();
-                                                       for (int j = 0; j < genreArry.length(); j++) {
-                                                                genre.add((String) genreArry.get(j));
-                                                            }
-                                                        movie.setGenre(genre);
+                                        // Genre is json array
+                                        JSONArray genreArry = obj.getJSONArray("genre");
+                                        ArrayList<String> genre = new ArrayList<String>();
+                                        for (int j = 0; j < genreArry.length(); j++) {
+                                            genre.add((String) genreArry.get(j));
+                                        }
+                                        movie.setGenre(genre);
 
-                                                                // adding movie to movies array
-                                                                        movieList.add(movie);
+                                        // adding movie to movies array
+                                        movieList.add(movie);
 
-                                                    } catch (JSONException e) {
-                                                        e.printStackTrace();
-                                                    }
-
-                                                   }
-
-                                                // notifying list adapter about data changes
-                                                        // so that it renders the list view with updated data
-                                                                adapter.notifyDataSetChanged();
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
                                     }
-                            },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                    }
-                })
-                .setRetryPolicy(new DefaultRetryPolicy(0,  DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
-                )
+
+                                }
+
+                                // notifying list adapter about data changes
+                                // so that it renders the list view with updated data
+                                adapter.notifyDataSetChanged();
+                            }
+                        },
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                            }
+                        })
+                        .setRetryPolicy(new DefaultRetryPolicy(0, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT)
+                        )
         );
     }
 
