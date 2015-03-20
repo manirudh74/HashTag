@@ -25,7 +25,6 @@
         android:listSelector="@drawable/list_row_selector"
         android:visibility="gone"/>
 
-    <!-- Twitter Login Button -->
     <Button android:id="@+id/btnLoginTwitter"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
@@ -33,5 +32,29 @@
         android:layout_marginLeft="10dip"
         android:layout_marginRight="10dip"
         android:layout_marginTop="30dip"/>
+    <Button android:id="@+id/btnLoginFacebook"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Login with Facebook"
+        android:layout_marginLeft="10dip"
+        android:layout_marginRight="10dip"
+        android:layout_marginTop="90dip"/>
+    <Button android:id="@+id/btnLoginGoogle"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Login with Google"
+        android:layout_marginLeft="10dip"
+        android:layout_marginRight="10dip"
+        android:layout_marginTop="150dip"/>
+
+    <Button android:id="@+id/btnMakeApiCall"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Make API Calls"
+        android:layout_marginLeft="10dip"
+        android:layout_marginRight="10dip"
+        android:layout_marginTop="450dip"/>
+
+
 
 </RelativeLayout>

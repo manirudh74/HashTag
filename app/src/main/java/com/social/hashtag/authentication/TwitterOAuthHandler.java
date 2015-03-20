@@ -60,7 +60,7 @@ public class TwitterOAuthHandler extends BaseOAuthHandler<TwitterAuthToken> {
         return authToken;
     }
 
-    public void refreshToken(TwitterAuthToken token){
+    public void refreshToken(){
         //TODO:refresh token
         //update lasttoken
     }
