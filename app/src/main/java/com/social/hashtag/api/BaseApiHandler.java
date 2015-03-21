@@ -3,9 +3,14 @@ package com.social.hashtag.api;
 import com.social.hashtag.authentication.BaseOAuthHandler;
 import com.social.hashtag.model.HashTaggedItem;
 import com.social.hashtag.model.UIItem;
+import com.social.hashtag.network.NetworkAccessThreadPool;
 import com.social.hashtag.util.UIUpdateCallback;
 
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * Created by payojb on 3/20/2015.
@@ -25,10 +30,17 @@ public abstract class BaseApiHandler<TUIItem extends UIItem> {
     }
 
     //TODO: make this a more generic handler?
-    public void handle(String hashTag, UIUpdateCallback uiUpdateCallback/*Main activity will provide callback to update UI*/){
+    public void handle(final String hashTag, UIUpdateCallback uiUpdateCallback/*Main activity will provide callback to update UI*/)
+            throws InterruptedException, ExecutionException{
         for(int i = 0;i<retries;i++){
             try{
-                ArrayList<TUIItem> uiItems = getItems(hashTag);
+                Future future = NetworkAccessThreadPool.getThreadPool().submit(new Callable<ArrayList<TUIItem>>() {
+                    @Override
+                    public ArrayList<TUIItem> call() throws Exception {
+                        return getItems(hashTag);
+                    }
+                });
+                ArrayList<TUIItem> uiItems = (ArrayList<TUIItem>)future.get();
                 uiUpdateCallback.UpdateListItemsForHashTag(uiItems);
             }catch (Exception e){
                 if(isTokenExpirationError(e))

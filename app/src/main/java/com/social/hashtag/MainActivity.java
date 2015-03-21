@@ -1,6 +1,8 @@
 package com.social.hashtag;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Color;
@@ -24,7 +26,6 @@ import twitter4j.Twitter;
 
 public class MainActivity extends ActionBarActivity {
 
-    private static final String twitterURL = "https://api.twitter.com/1.1/trends/place.json?id=1";
     private ProgressDialog pDialog;
     private List<Movie> movieList = new ArrayList<Movie>();
     private ListView listView;
@@ -36,6 +37,7 @@ public class MainActivity extends ActionBarActivity {
     private BaseOAuthHandler currentOAuthHandler;//only one oauth flow will be active at one time.
     private TwitterOAuthHandler twitterOAuthHandler;
     private AggregateApiHandler aggregateApiHandler = new AggregateApiHandler();
+    private int[] loginButtons;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,11 +60,12 @@ public class MainActivity extends ActionBarActivity {
         //Implement a function to call the OAuth handler
         //Add a case in handleLoginButtonClick and call the function from there.
         //That should take care of hooking up OAuth flow for the new service.
-        hookupLoginButtonHandlers(new int[]{
+        loginButtons = new int[]{
                 R.id.btnLoginTwitter,
                 R.id.btnLoginFacebook,
                 R.id.btnLoginGoogle
-        });
+        };
+        hookupLoginButtonHandlers(loginButtons);
         //OAuth Handlers
         twitterOAuthHandler = new TwitterOAuthHandler(
                 new OAuthUIRedirectHandler(){
@@ -74,17 +77,21 @@ public class MainActivity extends ActionBarActivity {
                 getApplicationContext());
 
         //Add Api handlers
-        aggregateApiHandler.addHandler(new TwitterApiHandler(twitterOAuthHandler));
+        aggregateApiHandler.addHandler(new TwitterApiHandler(twitterOAuthHandler, getApplicationContext()));
 
         findViewById(R.id.btnMakeApiCall).setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v){
+                hideLoginButtons();
+                try{
                 aggregateApiHandler.handle("somehashTagTODOChange", new UIUpdateCallback(){
                     @Override
                     public void UpdateListItemsForHashTag(ArrayList<? extends UIItem> hashTaggedItems){
                         //TODO: given a list of ui items, add them to UI.
                     }
-                });
+                });}catch (Exception e){
+                    alert.showAlertDialog(getApplicationContext(), "Failed to fetch items", "Failed to get items", false);
+                }
             }
         });
 
@@ -121,6 +128,20 @@ public class MainActivity extends ActionBarActivity {
         pDialog.show();
     }
 
+    private void hideLoginButtons(){
+        for(int i=0;i<loginButtons.length;i++){
+            View lb = findViewById(loginButtons[i]);
+            lb.setVisibility(View.GONE);
+        }
+    }
+
+    private void showLoginButtons(){
+        for(int i=0;i<loginButtons.length;i++){
+            View lb = findViewById(loginButtons[i]);
+            lb.setVisibility(View.VISIBLE);
+        }
+    }
+
     private void hookupLoginButtonHandlers(int[] loginButtonIds){
         for(int i = 0; i<loginButtonIds.length; i++) {
             findViewById(loginButtonIds[i]).setOnClickListener(new View.OnClickListener() {
@@ -142,13 +163,16 @@ public class MainActivity extends ActionBarActivity {
         loginInProgress = true;//this will be cleared when oauthFlow is complete(in handleOAuthRedirectForAccessToken())
         switch (viewId){
             case R.id.btnLoginTwitter:
-                loginToTwitter();
+                currentOAuthHandler = twitterOAuthHandler;
+                login("Twitter");
                 break;
             case R.id.btnLoginFacebook:
                 alert.showAlertDialog(this, "Ain't hooked up", "Hook me up brah. Won't you hook a brotha up?", false);
+                loginInProgress = false;
                 break;
             case R.id.btnLoginGoogle:
                 alert.showAlertDialog(this, "Ain't hooked up", "Hook me up brah. Won't you hook a brotha up?", false);
+                loginInProgress = false;
                 break;
             default:
                 loginInProgress = false;
@@ -156,12 +180,13 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
-    private void loginToTwitter(){
-        currentOAuthHandler = twitterOAuthHandler;
+    private void login(String serviceName){
+        if(currentOAuthHandler.isLoggedIn())
+            alert.showAlertDialog(this, "Already Logged In To "+serviceName, "", false);
         try {
             currentOAuthHandler.initiateTokenFlow();
         }catch (Exception e){
-            alert.showAlertDialog(this, "OAuth Request Token Failure", "Login to Twitter Failed", false);
+            alert.showAlertDialog(this, "OAuth Request Token Failure", "", false);
         }
     }
 

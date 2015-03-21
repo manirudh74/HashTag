@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 
 import com.social.hashtag.authentication.token.TwitterAuthToken;
+import com.social.hashtag.network.NetworkAccessThreadPool;
 import com.social.hashtag.util.OAuthUIRedirectHandler;
 
 import org.scribe.builder.ServiceBuilder;
@@ -71,7 +72,7 @@ public class TwitterOAuthHandler extends BaseOAuthHandler<TwitterAuthToken> {
     }
 
     public void initiateTokenFlow() throws Exception{
-        Future<String> future = networkAccessThreadPool.submit(new Callable<String>(){
+        Future<String> future = NetworkAccessThreadPool.getThreadPool().submit(new Callable<String>(){
             @Override
             public String call(){
                 requestToken = service.getRequestToken();
@@ -88,9 +89,9 @@ public class TwitterOAuthHandler extends BaseOAuthHandler<TwitterAuthToken> {
             return getLastToken();
         final String v = uri.getQueryParameter(URL_TWITTER_OAUTH_VERIFIER);
         final Verifier verifier = new Verifier(v);
-        Future future = networkAccessThreadPool.submit(new Callable<Token>(){
+        Future future = NetworkAccessThreadPool.getThreadPool().submit(new Callable<Token>() {
             @Override
-            public Token call(){
+            public Token call() {
                 return service.getAccessToken(requestToken, verifier);
             }
         });
