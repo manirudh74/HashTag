@@ -1,4 +1,5 @@
 package com.social.hashtag;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -17,6 +18,7 @@ import com.social.hashtag.api.AggregateApiHandler;
 import com.social.hashtag.api.TwitterApiHandler;
 import com.social.hashtag.authentication.BaseOAuthHandler;
 import com.social.hashtag.authentication.TwitterOAuthHandler;
+import com.social.hashtag.model.HashTaggedItem;
 import com.social.hashtag.model.Movie;
 import com.social.hashtag.model.UIItem;
 import com.social.hashtag.util.OAuthUIRedirectHandler;
@@ -27,7 +29,7 @@ import twitter4j.Twitter;
 public class MainActivity extends ActionBarActivity {
 
     private ProgressDialog pDialog;
-    private List<Movie> movieList = new ArrayList<Movie>();
+    private ArrayList<HashTaggedItem> hashTaggedItems = new ArrayList<HashTaggedItem>();
     private ListView listView;
     private CustomListAdapter adapter;
 
@@ -50,7 +52,7 @@ public class MainActivity extends ActionBarActivity {
         }
 
         listView = (ListView) findViewById(R.id.list);
-        adapter = new CustomListAdapter(this, movieList);
+        adapter = new CustomListAdapter(this, hashTaggedItems);
         listView.setAdapter(adapter);
 
         showProgressDialog("Loading...");
@@ -84,10 +86,21 @@ public class MainActivity extends ActionBarActivity {
             public void onClick(View v){
                 hideLoginButtons();
                 try{
-                aggregateApiHandler.handle("somehashTagTODOChange", new UIUpdateCallback(){
+                aggregateApiHandler.handle("earth", new UIUpdateCallback(){
                     @Override
-                    public void UpdateListItemsForHashTag(ArrayList<? extends UIItem> hashTaggedItems){
-                        //TODO: given a list of ui items, add them to UI.
+                    public void UpdateListItemsForHashTag(final ArrayList<? extends UIItem> hti){
+                        Runnable runnable = new Runnable(){
+                            public void run(){
+                                //reload content
+                                hashTaggedItems.clear();
+                                hashTaggedItems.addAll((ArrayList<HashTaggedItem>)hti);
+                                adapter.notifyDataSetChanged();
+                                listView.invalidateViews();
+                                listView.refreshDrawableState();
+                            }
+                        };
+
+                        runOnUiThread(runnable);
                     }
                 });}catch (Exception e){
                     alert.showAlertDialog(getApplicationContext(), "Failed to fetch items", "Failed to get items", false);

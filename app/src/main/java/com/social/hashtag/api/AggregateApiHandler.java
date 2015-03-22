@@ -3,6 +3,8 @@ package com.social.hashtag.api;
 import com.social.hashtag.authentication.BaseOAuthHandler;
 import com.social.hashtag.model.HashTaggedItem;
 
+import org.json.JSONException;
+
 import java.util.ArrayList;
 
 /**
@@ -22,7 +24,7 @@ public class AggregateApiHandler extends BaseApiHandler<HashTaggedItem> {
         apiHandlers.add(item);
     }
 
-    protected ArrayList<HashTaggedItem> getItems(String hashTag){
+    protected ArrayList<HashTaggedItem> getItems(String hashTag) throws JSONException{
         ArrayList<HashTaggedItem> items = new ArrayList<>();
        for(int i =0 ;i<apiHandlers.size();i++){
            items.addAll(apiHandlers.get(i).getItems(hashTag));

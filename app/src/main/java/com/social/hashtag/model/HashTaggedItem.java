@@ -6,4 +6,5 @@ package com.social.hashtag.model;
 public class HashTaggedItem implements UIItem {
     public String hashTag;
     public String itemValue;
+    public String imgUrl;
 }

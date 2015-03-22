@@ -6,6 +6,8 @@ import com.social.hashtag.model.UIItem;
 import com.social.hashtag.network.NetworkAccessThreadPool;
 import com.social.hashtag.util.UIUpdateCallback;
 
+import org.json.JSONException;
+
 import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -51,7 +53,7 @@ public abstract class BaseApiHandler<TUIItem extends UIItem> {
         }
     }
 
-    protected abstract ArrayList<TUIItem> getItems(String hashTag);
+    protected abstract ArrayList<TUIItem> getItems(String hashTag) throws JSONException;
     protected abstract boolean shouldRetry(Exception e);
     protected abstract boolean isTokenExpirationError(Exception e);
 }

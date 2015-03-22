@@ -14,7 +14,7 @@ public abstract class BaseOAuthHandler<T> {
     protected OAuthUIRedirectHandler oAuthUIRedirectHandler;
     public abstract boolean isLoggedIn();
     public abstract T getLastToken();
-    public abstract Boolean hasTokenExpired(T token);
+    public abstract Boolean hasTokenExpired();
     public abstract void refreshToken();
     public abstract void initiateTokenFlow() throws Exception;
     public abstract T completeTokenFlow(Uri uri) throws Exception;

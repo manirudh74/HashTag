@@ -20,7 +20,7 @@ import java.util.concurrent.Future;
 /**
  * Created by payojb on 3/17/2015.
  */
-public class TwitterOAuthHandler extends BaseOAuthHandler<TwitterAuthToken> {
+public class TwitterOAuthHandler extends BaseOAuthHandler<Token> {
 
     SharedPreferences sharedPreferences;
     Token requestToken;
@@ -33,6 +33,7 @@ public class TwitterOAuthHandler extends BaseOAuthHandler<TwitterAuthToken> {
     static final String TWITTER_CALLBACK_URL = "payojoauth://someurl";
     static String TWITTER_CONSUMER_KEY = "NNtogSAkXzWLPp9DgtnX7utpm";
     static String TWITTER_CONSUMER_SECRET = "bO7UW3HIEGtHyz5aEFNe7gEjn3ZPbmvf4EzTqvBMwGs4vJwf9B";
+    private Token accessToken;
 
     public TwitterOAuthHandler(OAuthUIRedirectHandler oaurh, Context c){
         super(oaurh);
@@ -46,19 +47,21 @@ public class TwitterOAuthHandler extends BaseOAuthHandler<TwitterAuthToken> {
                 .build();
     }
 
+    public OAuthService getOAuthService(){
+        return service;
+    }
+
+    public Boolean hasTokenExpired(){
+        //TODO: actually check.
+        return false;
+    }
+
     public boolean isLoggedIn(){
         return isTwitterLogedIn;
     }
 
-    public TwitterAuthToken getLastToken(){
-        if(!isLoggedIn())
-            return null;
-        String token = sharedPreferences.getString(PREF_KEY_OAUTH_TOKEN, null);
-        String tokenSecret = sharedPreferences.getString(PREF_KEY_OAUTH_SECRET, null);
-        TwitterAuthToken authToken = new TwitterAuthToken();
-        authToken.token = token;
-        authToken.tokenSecret = tokenSecret;
-        return authToken;
+    public Token getLastToken(){
+        return accessToken;
     }
 
     public void refreshToken(){
@@ -84,7 +87,7 @@ public class TwitterOAuthHandler extends BaseOAuthHandler<TwitterAuthToken> {
         oAuthUIRedirectHandler.RedirectToAuthorizationUrl(authenticationUrl);
     }
 
-    public synchronized TwitterAuthToken completeTokenFlow(Uri uri) throws Exception{
+    public synchronized Token completeTokenFlow(Uri uri) throws Exception{
         if(isLoggedIn())
             return getLastToken();
         final String v = uri.getQueryParameter(URL_TWITTER_OAUTH_VERIFIER);
@@ -95,16 +98,8 @@ public class TwitterOAuthHandler extends BaseOAuthHandler<TwitterAuthToken> {
                 return service.getAccessToken(requestToken, verifier);
             }
         });
-        Token token = (Token)future.get();
-        SharedPreferences.Editor e = sharedPreferences.edit();
-        e.putString(PREF_KEY_OAUTH_TOKEN, token.getToken());
-        e.putString(PREF_KEY_OAUTH_SECRET, token.getSecret());
-        e.commit();
-        TwitterAuthToken authToken = new TwitterAuthToken();
-        authToken.token = token.getToken();
-        authToken.tokenSecret = token.getSecret();
-        isTwitterLogedIn = true;
-        return authToken;
+        accessToken = (Token)future.get();
+        return accessToken;
     }
 
     public void logout(){
