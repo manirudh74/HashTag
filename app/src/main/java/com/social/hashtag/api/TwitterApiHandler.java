@@ -58,10 +58,15 @@ public class TwitterApiHandler extends BaseApiHandler<HashTaggedItem> {
             HashTaggedItem hti = new HashTaggedItem();
             hti.hashTag = hashTag;
             hti.itemValue = text;
-            JSONArray media = json.getJSONArray("media");
+            try{
+            JSONObject entities = tweet.getJSONObject("entities");
+            JSONArray media = entities.getJSONArray("media");
             if(media!=null && media.length()>0){
                 String imgUrl = ((JSONObject)media.get(0)).getString("media_url_https");
                 hti.imgUrl = imgUrl;
+            }
+            }catch(JSONException ex){
+                hti.imgUrl = "http://lorempixel.com/400/200/sports/Dummy-Text/";
             }
             result.add(hti);
         }
